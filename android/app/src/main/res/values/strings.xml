@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">클립 서랍</string>
+    <string name="title_activity_main">클립 서랍</string>
+    <string name="package_name">com.clipshelf.app</string>
+    <string name="custom_url_scheme">com.clipshelf.app</string>
+</resources>

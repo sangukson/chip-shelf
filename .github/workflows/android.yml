@@ -1,0 +1,52 @@
+name: Android build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      KEYSTORE_BASE64: ${{ secrets.CLIP_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm test
+      - run: npx cap sync android
+
+      # 바로 설치해 볼 수 있는 디버그 APK
+      - name: Debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clip-shelf-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      # 플레이 스토어에 올릴 서명된 AAB. 키스토어 시크릿을 등록한 뒤에만 돈다.
+      - name: Release AAB
+        if: ${{ env.KEYSTORE_BASE64 != '' }}
+        working-directory: android
+        env:
+          CLIP_KEYSTORE_PASSWORD: ${{ secrets.CLIP_KEYSTORE_PASSWORD }}
+          CLIP_KEY_ALIAS: ${{ secrets.CLIP_KEY_ALIAS }}
+          CLIP_KEY_PASSWORD: ${{ secrets.CLIP_KEY_PASSWORD }}
+          CLIP_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          CLIP_KEYSTORE_FILE="$RUNNER_TEMP/release.jks" ./gradlew bundleRelease
+      - uses: actions/upload-artifact@v4
+        if: ${{ env.KEYSTORE_BASE64 != '' }}
+        with:
+          name: clip-shelf-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab

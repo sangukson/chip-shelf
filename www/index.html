@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16171b" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="클립 서랍">
+<title>클립 서랍</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="theme.js"></script>
+<link rel="stylesheet" href="vendor/seed-design/base.min.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- 목록 화면 -->
+<div id="home" class="screen">
+  <header class="appbar">
+    <h1 class="appbar-title">클립 서랍</h1>
+  </header>
+
+  <div class="screen-body">
+    <form id="openForm" class="open" novalidate>
+      <label class="field-label" for="url">유튜브 링크</label>
+      <div class="open-row">
+        <input id="url" class="text-input" type="url" inputmode="url" autocomplete="off" placeholder="링크를 붙여넣으세요" aria-describedby="openHint">
+        <button class="btn btn-brand btn-md" type="submit">열기</button>
+      </div>
+      <p class="hint" id="openHint" role="status"></p>
+    </form>
+
+    <div class="divider-thick"></div>
+
+    <div class="list-header">
+      <h2 id="count" class="list-title">보관한 클립</h2>
+    </div>
+    <div class="search">
+      <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.05l4.25 4.24a1 1 0 0 1-1.42 1.42l-4.24-4.25A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg>
+      <input id="q" type="search" placeholder="제목, 메모, 태그 검색" aria-label="클립 검색">
+    </div>
+    <div id="list"></div>
+
+    <details class="backup">
+      <summary>
+        <span>백업과 복원</span>
+        <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.3 9.3a1 1 0 0 1 1.4 0L12 13.6l4.3-4.3a1 1 0 1 1 1.4 1.4l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 0 1 0-1.4Z"/></svg>
+      </summary>
+      <p class="backup-desc">클립은 이 기기에만 저장됩니다. 아래 내용을 복사해 두면 다른 기기에서 붙여넣어 복원할 수 있습니다.</p>
+      <textarea id="backupText" class="text-input" rows="4" aria-label="백업 데이터" spellcheck="false"></textarea>
+      <div class="btn-row">
+        <button type="button" id="exportBtn" class="btn btn-neutral-weak btn-md">백업 내용 만들기</button>
+        <button type="button" id="importBtn" class="btn btn-neutral-weak btn-md">붙여넣은 내용 복원</button>
+      </div>
+      <p class="hint" id="backupHint" role="status"></p>
+    </details>
+  </div>
+</div>
+
+<!-- 재생·편집 화면 -->
+<div id="editor" class="screen" hidden>
+  <header class="appbar">
+    <button type="button" id="backBtn" class="icon-btn" aria-label="목록으로">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.7 4.3a1 1 0 0 1 0 1.4L9.4 12l6.3 6.3a1 1 0 0 1-1.4 1.4l-7-7a1 1 0 0 1 0-1.4l7-7a1 1 0 0 1 1.4 0Z"/></svg>
+    </button>
+    <span class="appbar-title appbar-title-sm" id="editorTitle">새 클립</span>
+    <a id="ytLink" class="text-btn" target="_blank" rel="noopener">유튜브 앱</a>
+  </header>
+
+  <div class="player"><div id="player"></div><p id="playerMsg" class="playermsg" hidden></p></div>
+
+  <div class="screen-body editor-body">
+    <section class="range" aria-label="구간">
+      <div class="range-top">
+        <span class="now" id="now" aria-label="현재 위치">0:00</span>
+        <span class="range-summary" id="hint" role="status"></span>
+      </div>
+      <div class="track" id="track" hidden>
+        <div class="track-seg" id="trackSeg"></div>
+        <div class="track-head" id="trackHead"></div>
+      </div>
+
+      <div class="marks">
+        <div class="mark">
+          <label class="mark-label" for="start">시작</label>
+          <input id="start" class="mark-input" inputmode="numeric" autocomplete="off" placeholder="0:00">
+          <button type="button" id="markIn" class="btn btn-brand-weak btn-md">지금 위치로</button>
+        </div>
+        <div class="mark">
+          <label class="mark-label" for="end">끝</label>
+          <input id="end" class="mark-input" inputmode="numeric" autocomplete="off" placeholder="0:00">
+          <button type="button" id="markOut" class="btn btn-brand-weak btn-md">지금 위치로</button>
+        </div>
+      </div>
+
+      <div class="play-row">
+        <button type="button" id="previewBtn" class="btn btn-neutral-weak btn-md">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.6v12.8a1 1 0 0 0 1.5.86l10.6-6.4a1 1 0 0 0 0-1.72L9.5 4.74A1 1 0 0 0 8 5.6Z"/></svg>
+          구간 재생
+        </button>
+        <label class="switch">
+          <input id="loop" type="checkbox" role="switch" checked>
+          <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+          <span>반복</span>
+        </label>
+      </div>
+    </section>
+
+    <div class="divider-thick bleed"></div>
+
+    <form id="clipForm" class="fields" novalidate>
+      <div class="field">
+        <label class="field-label" for="title">제목</label>
+        <input id="title" class="text-input" autocomplete="off" placeholder="이 구간을 한 줄로">
+      </div>
+      <div class="field">
+        <label class="field-label" for="note">메모</label>
+        <textarea id="note" class="text-input" rows="3" placeholder="왜 남겨두는지, 핵심이 뭔지"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label" for="tags">태그</label>
+        <input id="tags" class="text-input" autocomplete="off" placeholder="쉼표로 구분 (예: 설계, 발표)">
+      </div>
+
+      <div class="danger-zone" id="dangerZone" hidden>
+        <button type="button" id="deleteBtn" class="text-btn critical">이 클립 삭제</button>
+        <div id="deleteConfirm" class="confirm" hidden>
+          <span>삭제하면 되돌릴 수 없습니다.</span>
+          <div class="btn-row">
+            <button type="button" id="deleteNo" class="btn btn-neutral-weak btn-md">취소</button>
+            <button type="button" id="deleteYes" class="btn btn-critical btn-md">삭제</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta">
+        <button class="btn btn-brand btn-lg" type="submit" id="saveBtn">클립 저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
