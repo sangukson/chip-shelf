@@ -28,50 +28,31 @@
     return n;
   }
   function setHint(id, msg, isErr) {
-    var h = $(id); h.textContent = msg || "";
-    var base = id === "hint" ? "range-summary" : "hint";
-    h.className = base + (isErr ? " err" : "");
-  }
-  // 빈 목록 그림: 영상 바 위에 구간 괄호. 색은 SEED 토큰을 따른다.
-  function emptyArt() {
-    var ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
-    svg.setAttribute("viewBox", "0 0 120 72"); svg.setAttribute("class", "empty-art"); svg.setAttribute("aria-hidden", "true");
-    svg.innerHTML =
-      '<rect x="4" y="4" width="112" height="64" rx="10" style="fill:var(--seed-color-bg-neutral-weak)"/>' +
-      '<rect x="16" y="48" width="88" height="5" rx="2.5" style="fill:var(--seed-color-bg-neutral-solid-muted, var(--seed-color-stroke-neutral-weak))"/>' +
-      '<rect x="44" y="48" width="30" height="5" style="fill:var(--seed-color-bg-brand-solid)"/>' +
-      '<path d="M48 38h-6v20h6M70 38h6v20h-6" style="fill:none;stroke:var(--seed-color-fg-brand);stroke-width:3;stroke-linecap:round;stroke-linejoin:round"/>' +
-      '<path d="M55 20v12l10-6z" style="fill:var(--seed-color-fg-neutral-subtle)"/>';
-    return svg;
+    var h = $(id); h.textContent = msg || ""; h.className = "hint" + (isErr ? " err" : "");
   }
 
   // ---------- 목록 ----------
+  var SEARCH_FROM = 8; // 클립이 이보다 많을 때만 검색칸을 보인다
   function renderList() {
-    var q = $("q").value.trim().toLowerCase();
+    $("q").hidden = clips.length < SEARCH_FROM;
+    var q = $("q").hidden ? "" : $("q").value.trim().toLowerCase();
     var shown = clips.filter(function (c) {
       return !q || [c.title, c.note, c.tags.join(" ")].join(" ").toLowerCase().indexOf(q) >= 0;
     });
-    $("count").textContent = "보관한 클립 " + clips.length + "개";
     var list = $("list");
     list.textContent = "";
     if (!shown.length) {
-      list.appendChild(clips.length
-        ? el("div", { class: "empty small" }, [el("span", { text: "검색에 맞는 클립이 없어요." })])
-        : el("div", { class: "empty" }, [emptyArt(),
-            el("strong", { text: "아직 보관한 클립이 없어요" }),
-            el("span", { text: "위에 유튜브 링크를 붙여넣고, 영상을 보면서 시작과 끝을 찍어 저장해 보세요." })]));
+      list.appendChild(el("p", { class: "empty", text: clips.length ? "검색 결과가 없어요" : "아직 저장한 클립이 없어요" }));
       return;
     }
     shown.forEach(function (c) {
       var img = el("img", { src: "https://i.ytimg.com/vi/" + c.videoId + "/mqdefault.jpg", alt: "", loading: "lazy" });
       img.addEventListener("error", function () { img.remove(); });
       var row = el("button", { class: "clip", type: "button" }, [
-        el("div", { class: "thumb" }, [img, el("span", { class: "len", text: C.fmtLen(c.end - c.start) })]),
+        el("div", { class: "thumb" }, [img]),
         el("div", { class: "cbody" }, [
-          el("span", { class: "t" + (c.title ? "" : " untitled"), text: c.title || "제목 없는 클립" }),
-          el("span", { class: "tc", text: C.fmt(c.start) + " – " + C.fmt(c.end) }),
-          c.note ? el("span", { class: "n", text: c.note }) : null,
-          c.tags.length ? el("span", { class: "tags" }, c.tags.map(function (t) { return el("span", { class: "tag", text: t }); })) : null
+          el("span", { class: "t" + (c.title ? "" : " untitled"), text: c.title || "제목 없음" }),
+          el("span", { class: "tc", text: C.fmt(c.start) + " – " + C.fmt(c.end) + " · " + C.fmtLen(c.end - c.start) })
         ])
       ]);
       row.addEventListener("click", function () { openEditor({ clip: c }); });
@@ -110,24 +91,8 @@
     var t = now();
     $("now").textContent = C.fmt(t);
     var r = range();
-    drawTrack(t, r);
-    // 구간 끝에 닿으면 반복이 켜져 있을 때는 시작으로, 꺼져 있으면 멈춘다.
-    if (player && segmentOn && r.ok && t >= r.e) {
-      if ($("loop").checked) player.seekTo(r.s, true);
-      else { player.pauseVideo(); segmentOn = false; }
-    }
-  }
-  // 영상 전체 길이 위에 저장할 구간과 현재 위치를 그린다. 길이를 모르면 숨긴다.
-  function drawTrack(t, r) {
-    var d = 0;
-    try { d = playerReady && player.getDuration ? player.getDuration() || 0 : 0; } catch (e) { d = 0; }
-    $("track").hidden = !(d > 0);
-    if (!(d > 0)) return;
-    var pct = function (x) { return Math.max(0, Math.min(100, x / d * 100)) + "%"; };
-    $("trackHead").style.left = pct(t);
-    var seg = $("trackSeg");
-    if (r.ok) { seg.hidden = false; seg.style.left = pct(r.s); seg.style.width = "calc(" + pct(r.e) + " - " + pct(r.s) + ")"; }
-    else seg.hidden = true;
+    // 구간 재생 중 끝에 닿으면 시작으로 돌아가 반복한다.
+    if (player && segmentOn && r.ok && t >= r.e) player.seekTo(r.s, true);
   }
   var segmentOn = false;
   function playSegment() {
@@ -161,7 +126,7 @@
           onError: function (ev) {
             var code = ev && ev.data;
             playerMsg(code === 101 || code === 150 || code === 153
-              ? "이 영상은 앱 안에서 재생할 수 없게 설정되어 있습니다. 위의 유튜브에서 열기를 눌러 주세요."
+              ? "이 영상은 앱 안에서 재생할 수 없게 설정되어 있습니다. 오른쪽 위 유튜브를 눌러 주세요."
               : "영상을 재생하지 못했습니다. 링크가 맞는지 확인해 주세요.");
           }
         }
@@ -180,13 +145,9 @@
   // ---------- 편집 화면 ----------
   function showRange() {
     var r = range();
-    if (!isNaN(r.s) && !isNaN(r.e)) {
-      if (!r.ok) return setHint("hint", "끝이 시작보다 뒤여야 합니다.", true);
-      var h = $("hint"); h.className = "range-summary"; h.textContent = "";
-      h.appendChild(el("b", { text: C.fmtLen(r.e - r.s) }));
-      h.appendChild(document.createTextNode(" 구간"));
-      return;
-    }
+    $("startView").textContent = isNaN(r.s) ? "찍기" : C.fmt(r.s);
+    $("endView").textContent = isNaN(r.e) ? "찍기" : C.fmt(r.e);
+    if (!isNaN(r.s) && !isNaN(r.e) && !r.ok) return setHint("hint", "끝이 시작보다 뒤여야 해요.", true);
     setHint("hint", "");
   }
 
@@ -198,10 +159,8 @@
     $("end").value = c ? C.fmt(c.end) : "";
     $("title").value = c ? c.title : "";
     $("note").value = c ? c.note : "";
-    $("tags").value = c ? c.tags.join(", ") : "";
-    $("saveBtn").textContent = c ? "수정 저장" : "클립 저장";
-    $("dangerZone").hidden = !c; $("deleteBtn").hidden = false; $("deleteConfirm").hidden = true;
-    $("editorTitle").textContent = c ? (c.title || "제목 없는 클립") : "새 클립";
+    $("note").hidden = !(c && c.note); $("noteToggle").hidden = !$("note").hidden;
+    $("deleteBtn").hidden = !c; $("deleteBtn").textContent = "삭제"; deleteArmed = false;
     $("ytLink").href = "https://www.youtube.com/watch?v=" + cur.videoId + (c ? "&t=" + c.start + "s" : "");
     showRange();
     $("home").hidden = true; $("editor").hidden = false;
@@ -221,22 +180,21 @@
 
   $("markIn").addEventListener("click", function () { $("start").value = C.fmt(now()); showRange(); });
   $("markOut").addEventListener("click", function () { $("end").value = C.fmt(now()); showRange(); });
-  $("start").addEventListener("input", showRange);
-  $("end").addEventListener("input", showRange);
+  $("noteToggle").addEventListener("click", function () { $("noteToggle").hidden = true; $("note").hidden = false; $("note").focus(); });
   $("previewBtn").addEventListener("click", playSegment);
 
   $("clipForm").addEventListener("submit", function (ev) {
     ev.preventDefault();
     if (!cur) return;
     var r = range();
-    if (isNaN(r.s)) return setHint("hint", "시작 시간을 찍거나 5:20 형식으로 적어 주세요.", true);
-    if (isNaN(r.e)) return setHint("hint", "끝 시간을 찍거나 5:40 형식으로 적어 주세요.", true);
-    if (!r.ok) return setHint("hint", "끝이 시작보다 뒤여야 합니다.", true);
+    if (isNaN(r.s)) return setHint("hint", "시작을 찍어 주세요.", true);
+    if (isNaN(r.e)) return setHint("hint", "끝을 찍어 주세요.", true);
+    if (!r.ok) return setHint("hint", "끝이 시작보다 뒤여야 해요.", true);
     var prev = clips.filter(function (c) { return c.id === cur.clipId; })[0];
     var clip = {
       id: prev ? prev.id : newId(), videoId: cur.videoId, start: r.s, end: r.e,
       title: $("title").value.trim(), note: $("note").value.trim(),
-      tags: $("tags").value.split(",").map(function (t) { return t.trim().replace(/^#/, ""); }).filter(Boolean),
+      tags: prev ? prev.tags : [],
       createdAt: prev ? prev.createdAt : Date.now()
     };
     var before = clips.slice();
@@ -248,9 +206,10 @@
     }
     history.back();
   });
-  $("deleteBtn").addEventListener("click", function () { $("deleteBtn").hidden = true; $("deleteConfirm").hidden = false; });
-  $("deleteNo").addEventListener("click", function () { $("deleteBtn").hidden = false; $("deleteConfirm").hidden = true; });
-  $("deleteYes").addEventListener("click", function () {
+  // 실수로 지우지 않게 두 번 눌러야 삭제된다.
+  var deleteArmed = false;
+  $("deleteBtn").addEventListener("click", function () {
+    if (!deleteArmed) { deleteArmed = true; $("deleteBtn").textContent = "한 번 더 누르면 삭제돼요"; return; }
     clips = clips.filter(function (c) { return c.id !== cur.clipId; });
     persist();
     history.back();
@@ -285,7 +244,7 @@
   $("exportBtn").addEventListener("click", function () {
     $("backupText").value = JSON.stringify(clips);
     $("backupText").select();
-    setHint("backupHint", "클립 " + clips.length + "개를 담았습니다. 전체를 복사해 보관하세요.");
+    setHint("backupHint", "클립 " + clips.length + "개. 전체를 복사해 두세요.");
   });
   $("importBtn").addEventListener("click", function () {
     var arr;
@@ -298,7 +257,7 @@
       if (!byId[c.id]) { clips.push(c); byId[c.id] = true; added++; }
     });
     sortClips(); persist(); renderList();
-    setHint("backupHint", "클립 " + added + "개를 복원했습니다.");
+    setHint("backupHint", "클립 " + added + "개를 불러왔어요.");
   });
 
   // ---------- 시작 ----------
