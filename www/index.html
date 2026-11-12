@@ -2,17 +2,19 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#16171b" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="클립 서랍">
 <title>클립 서랍</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
 <script src="theme.js"></script>
 <link rel="stylesheet" href="vendor/seed-design/base.min.css">
 <link rel="stylesheet" href="app.css">
@@ -32,6 +34,19 @@
 
     <input id="q" class="input search" type="search" placeholder="검색" aria-label="클립 검색" hidden>
     <div id="list"></div>
+
+    <!-- 사파리에서 열었을 때만: 홈 화면에 추가하는 방법 -->
+    <aside id="installTip" class="install" hidden>
+      <img src="icon-180.png" alt="" class="install-icon">
+      <div class="install-text">
+        <strong>홈 화면에 추가하면 앱처럼 써요</strong>
+        <span id="installSteps"><b>공유</b> <svg class="share-glyph" viewBox="0 0 24 24" aria-label="공유"><path d="M12 2.6a1 1 0 0 1 .7.3l3.5 3.5a1 1 0 1 1-1.4 1.4L13 6v8.5a1 1 0 1 1-2 0V6L9.2 7.8a1 1 0 0 1-1.4-1.4l3.5-3.5a1 1 0 0 1 .7-.3ZM6 10h1.5a1 1 0 1 1 0 2H6v8h12v-8h-1.5a1 1 0 1 1 0-2H18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"/></svg> (안 보이면 <b>···</b> 안) → <b>홈 화면에 추가</b></span>
+      </div>
+      <button type="button" id="installBtn" class="btn brand small" hidden>설치</button>
+      <button type="button" id="installClose" class="icon small" aria-label="닫기">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.3 6.3a1 1 0 0 1 1.4 0L12 10.6l4.3-4.3a1 1 0 1 1 1.4 1.4L13.4 12l4.3 4.3a1 1 0 0 1-1.4 1.4L12 13.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 0-1.4Z"/></svg>
+      </button>
+    </aside>
 
     <details class="backup">
       <summary>백업</summary>

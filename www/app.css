@@ -1,7 +1,9 @@
 /* SEED Design 토큰만 쓴다. 화면마다 꼭 필요한 요소만 남긴 단순한 구성. */
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+/* 앱처럼: 버튼을 길게 눌러도 글자 선택·미리보기 메뉴가 뜨지 않게 */
+button, .clip, .mark, summary, a { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 body {
   margin: 0;
   background: var(--seed-color-bg-layer-default);
@@ -81,6 +83,25 @@ textarea.input { resize: none; }
 .backup summary::-webkit-details-marker { display: none; }
 .backup[open] summary { margin-bottom: var(--seed-dimension-x2); }
 .backup textarea { font-family: ui-monospace, Menlo, monospace; font-size: var(--seed-font-size-t2); margin-bottom: var(--seed-dimension-x2); }
+
+/* 홈 화면 추가 안내 (사파리에서만) */
+.install {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+  display: flex; align-items: center; gap: var(--seed-dimension-x3);
+  margin: 0 max(var(--seed-dimension-x3), var(--seed-safe-area-left)) calc(var(--seed-dimension-x3) + var(--seed-safe-area-bottom));
+  padding: var(--seed-dimension-x3) var(--seed-dimension-x2) var(--seed-dimension-x3) var(--seed-dimension-x3);
+  border-radius: var(--seed-radius-r4);
+  background: var(--seed-color-bg-layer-floating); box-shadow: var(--seed-shadow-s3);
+}
+.install-icon { width: 44px; height: 44px; border-radius: 10px; flex: none; }
+.install-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; font-size: var(--seed-font-size-t3); line-height: var(--seed-line-height-t3); color: var(--seed-color-fg-neutral-muted); }
+.install-text strong { font-size: var(--seed-font-size-t4); line-height: var(--seed-line-height-t4); color: var(--seed-color-fg-neutral); }
+.install-text b { color: var(--seed-color-fg-neutral); }
+.share-glyph { width: 16px; height: 16px; vertical-align: -3px; fill: var(--seed-color-fg-informative); }
+.btn.small { min-height: var(--seed-dimension-x9, 36px); padding: 0 var(--seed-dimension-x4); font-size: var(--seed-font-size-t4); }
+.icon.small { width: 36px; height: 36px; color: var(--seed-color-fg-neutral-subtle); }
+.icon.small svg { width: 20px; height: 20px; }
+body.has-install #home .body { padding-bottom: calc(110px + var(--seed-safe-area-bottom)); }
 
 /* 편집 */
 .bar {

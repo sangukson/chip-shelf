@@ -272,4 +272,51 @@
     openFromText(shared);
   }
   checkNativeShare();
+
+  // ---------- 앱처럼 쓰기 ----------
+  // 서비스 워커: 홈 화면 앱이 빨리 뜨고 오프라인에서도 목록이 열린다. 네이티브 앱(Capacitor) 안에서는 쓰지 않는다.
+  if ("serviceWorker" in navigator && !window.Capacitor && location.protocol === "https:") {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  }
+
+  // 사파리 등 브라우저에서 열었을 때만 "홈 화면에 추가" 안내를 띄운다. 이미 홈 화면 앱이면 띄우지 않는다.
+  var TIP_KEY = "clip-shelf-install-tip-closed";
+  var standalone = navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  var ua = navigator.userAgent;
+  var isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && "ontouchend" in document);
+  var deferredPrompt = null;
+  function tipClosed() { try { return localStorage.getItem(TIP_KEY) === "1"; } catch (e) { return false; } }
+  function showTip(show) {
+    $("installTip").hidden = !show;
+    document.body.classList.toggle("has-install", show);
+  }
+  if (!standalone && !window.Capacitor && !tipClosed()) {
+    if (isIOS) {
+      // 아이폰 크롬·카카오톡 등 인앱 브라우저는 홈 화면 추가가 안 되거나 다르게 동작한다
+      if (!/Safari/.test(ua) || /CriOS|FxiOS|EdgiOS|KAKAOTALK|Instagram|FBAN|NAVER/.test(ua)) {
+        $("installSteps").textContent = "사파리에서 이 주소를 열고 공유 → 홈 화면에 추가를 누르세요";
+      }
+      showTip(true);
+    }
+  }
+  // 안드로이드 크롬: 설치 버튼을 직접 보여 줄 수 있다
+  window.addEventListener("beforeinstallprompt", function (ev) {
+    ev.preventDefault();
+    if (standalone || tipClosed()) return;
+    deferredPrompt = ev;
+    $("installSteps").textContent = "설치하면 홈 화면에서 바로 열 수 있어요";
+    $("installBtn").hidden = false;
+    showTip(true);
+  });
+  $("installBtn").addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function () { deferredPrompt = null; showTip(false); }, function () {});
+  });
+  $("installClose").addEventListener("click", function () {
+    try { localStorage.setItem(TIP_KEY, "1"); } catch (e) {}
+    showTip(false);
+  });
+  window.addEventListener("appinstalled", function () { showTip(false); });
 })();
