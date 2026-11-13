@@ -93,7 +93,7 @@
   }
   function renderHome() {
     var total = clips.reduce(function (s, c) { return s + (c.end - c.start); }, 0);
-    $("stat").textContent = clips.length ? "클립 " + clips.length + "개 · " + C.fmtLen(total) : "";
+    $("stat").textContent = clips.length ? "클립 " + clips.length + "개 · " + C.fmtLen(total) + " 모았어요" : "";
     var box = $("cats"); box.textContent = "";
     cats.forEach(function (c, i) {
       var card = catCard({ emoji: c.emoji, name: c.name, color: c.color, count: clipsIn(c.id).length, onClick: function () { go("cat-" + c.id); } });
