@@ -65,11 +65,40 @@
       id: String(c.id || ""), videoId: c.videoId, start: Math.floor(s), end: Math.floor(e),
       title: String(c.title || ""), note: String(c.note || ""),
       tags: Array.isArray(c.tags) ? c.tags.map(String).filter(Boolean) : [],
+      categoryId: typeof c.categoryId === "string" ? c.categoryId : "",
       createdAt: Number(c.createdAt) || 0
     };
   }
 
-  var api = { parseTime: parseTime, fmt: fmt, fmtLen: fmtLen, parseYouTube: parseYouTube, normalizeClip: normalizeClip };
+  var CAT_COLORS = ["tomato", "sun", "mint", "sky", "grape", "pink"];
+
+  // 서랍(카테고리) 모양 확인. 이름이 없으면 null.
+  function normalizeCategory(c) {
+    if (!c || typeof c !== "object") return null;
+    var name = String(c.name || "").trim().slice(0, 20);
+    if (!name || !c.id) return null;
+    return {
+      id: String(c.id), name: name,
+      emoji: String(c.emoji || "📁").slice(0, 8),
+      color: CAT_COLORS.indexOf(c.color) >= 0 ? c.color : CAT_COLORS[0],
+      createdAt: Number(c.createdAt) || 0
+    };
+  }
+
+  // 백업 읽기: 예전 형식(클립 배열)과 새 형식({cats, clips}) 둘 다 받는다. 못 읽으면 null.
+  function parseBackup(text) {
+    var d;
+    try { d = JSON.parse(text); } catch (e) { return null; }
+    if (Array.isArray(d)) d = { cats: [], clips: d };
+    if (!d || !Array.isArray(d.clips)) return null;
+    return {
+      cats: (Array.isArray(d.cats) ? d.cats : []).map(normalizeCategory).filter(Boolean),
+      clips: d.clips.map(normalizeClip).filter(Boolean)
+    };
+  }
+
+  var api = { parseTime: parseTime, fmt: fmt, fmtLen: fmtLen, parseYouTube: parseYouTube, normalizeClip: normalizeClip,
+    normalizeCategory: normalizeCategory, parseBackup: parseBackup, CAT_COLORS: CAT_COLORS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ClipCore = api;
 })(typeof window !== "undefined" ? window : globalThis);

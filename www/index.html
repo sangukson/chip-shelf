@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#16171b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fffdf5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17151f" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=no">
@@ -15,58 +15,82 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<script src="theme.js"></script>
-<link rel="stylesheet" href="vendor/seed-design/base.min.css">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
 
-<!-- 목록 -->
+<!-- 홈: 서랍(카테고리) 목록 -->
 <div id="home" class="screen">
   <div class="body">
-    <h1 class="title">클립 서랍</h1>
+    <header class="top">
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>클립 서랍</h1>
+      <p class="stat" id="stat"></p>
+    </header>
 
-    <form id="openForm" class="open" novalidate>
+    <form id="openForm" class="paste" novalidate>
       <input id="url" class="input" type="url" inputmode="url" autocomplete="off" placeholder="유튜브 링크 붙여넣기" aria-label="유튜브 링크" aria-describedby="openHint">
-      <button class="btn brand" type="submit">열기</button>
+      <button class="btn primary" type="submit">콕!</button>
     </form>
     <p class="hint" id="openHint" role="status"></p>
 
-    <input id="q" class="input search" type="search" placeholder="검색" aria-label="클립 검색" hidden>
-    <div id="list"></div>
+    <h2 class="section">내 서랍</h2>
+    <div id="cats" class="cats"></div>
+    <div id="starter" class="starter" hidden>
+      <p>이런 서랍으로 시작해 볼까요?</p>
+      <div id="starterChips" class="chips"></div>
+    </div>
 
-    <!-- 사파리에서 열었을 때만: 홈 화면에 추가하는 방법 -->
     <aside id="installTip" class="install" hidden>
       <img src="icon-180.png" alt="" class="install-icon">
       <div class="install-text">
         <strong>홈 화면에 추가하면 앱처럼 써요</strong>
         <span id="installSteps"><b>공유</b> <svg class="share-glyph" viewBox="0 0 24 24" aria-label="공유"><path d="M12 2.6a1 1 0 0 1 .7.3l3.5 3.5a1 1 0 1 1-1.4 1.4L13 6v8.5a1 1 0 1 1-2 0V6L9.2 7.8a1 1 0 0 1-1.4-1.4l3.5-3.5a1 1 0 0 1 .7-.3ZM6 10h1.5a1 1 0 1 1 0 2H6v8h12v-8h-1.5a1 1 0 1 1 0-2H18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"/></svg> (안 보이면 <b>···</b> 안) → <b>홈 화면에 추가</b></span>
       </div>
-      <button type="button" id="installBtn" class="btn brand small" hidden>설치</button>
-      <button type="button" id="installClose" class="icon small" aria-label="닫기">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.3 6.3a1 1 0 0 1 1.4 0L12 10.6l4.3-4.3a1 1 0 1 1 1.4 1.4L13.4 12l4.3 4.3a1 1 0 0 1-1.4 1.4L12 13.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 0-1.4Z"/></svg>
-      </button>
+      <button type="button" id="installBtn" class="btn primary small" hidden>설치</button>
+      <button type="button" id="installClose" class="iconbtn" aria-label="닫기">✕</button>
     </aside>
 
     <details class="backup">
       <summary>백업</summary>
       <textarea id="backupText" class="input" rows="3" aria-label="백업 데이터" spellcheck="false"></textarea>
       <div class="row">
-        <button type="button" id="exportBtn" class="btn weak">내보내기</button>
-        <button type="button" id="importBtn" class="btn weak">불러오기</button>
+        <button type="button" id="exportBtn" class="btn">내보내기</button>
+        <button type="button" id="importBtn" class="btn">불러오기</button>
       </div>
       <p class="hint" id="backupHint" role="status"></p>
     </details>
   </div>
 </div>
 
+<!-- 서랍 안: 그 분류의 클립들 -->
+<div id="catPage" class="screen" hidden>
+  <header class="bar">
+    <button type="button" class="iconbtn back" data-back aria-label="뒤로">←</button>
+    <button type="button" id="catEdit" class="textbtn">서랍 수정</button>
+  </header>
+  <div class="body">
+    <div class="cat-hero" id="catHero">
+      <span class="cat-hero-emoji" id="catEmoji" aria-hidden="true"></span>
+      <div>
+        <h1 id="catName"></h1>
+        <p id="catCount"></p>
+      </div>
+    </div>
+    <form id="catOpenForm" class="paste" novalidate>
+      <input id="catUrl" class="input" type="url" inputmode="url" autocomplete="off" placeholder="이 서랍에 넣을 유튜브 링크" aria-label="유튜브 링크" aria-describedby="catHint">
+      <button class="btn primary" type="submit">콕!</button>
+    </form>
+    <p class="hint" id="catHint" role="status"></p>
+    <input id="q" class="input search" type="search" placeholder="검색" aria-label="클립 검색" hidden>
+    <div id="list"></div>
+  </div>
+</div>
+
 <!-- 재생·편집 -->
 <div id="editor" class="screen" hidden>
   <header class="bar">
-    <button type="button" id="backBtn" class="icon" aria-label="목록으로">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.7 4.3a1 1 0 0 1 0 1.4L9.4 12l6.3 6.3a1 1 0 0 1-1.4 1.4l-7-7a1 1 0 0 1 0-1.4l7-7a1 1 0 0 1 1.4 0Z"/></svg>
-    </button>
-    <a id="ytLink" class="link" target="_blank" rel="noopener">유튜브</a>
+    <button type="button" class="iconbtn back" data-back aria-label="뒤로">←</button>
+    <a id="ytLink" class="textbtn" target="_blank" rel="noopener">유튜브</a>
   </header>
 
   <div class="player"><div id="player"></div><p id="playerMsg" class="playermsg" hidden></p></div>
@@ -74,17 +98,17 @@
   <div class="body">
     <div class="now-row">
       <span class="now" id="now" aria-label="현재 위치">0:00</span>
-      <button type="button" id="previewBtn" class="btn weak">구간 재생</button>
+      <button type="button" id="previewBtn" class="btn small">▶ 구간 재생</button>
     </div>
 
     <div class="marks">
       <button type="button" id="markIn" class="mark">
-        <span class="mark-label">시작</span>
-        <span class="mark-time" id="startView">찍기</span>
+        <span class="mark-label">시작 콕</span>
+        <span class="mark-time" id="startView">–:––</span>
       </button>
       <button type="button" id="markOut" class="mark">
-        <span class="mark-label">끝</span>
-        <span class="mark-time" id="endView">찍기</span>
+        <span class="mark-label">끝 콕</span>
+        <span class="mark-time" id="endView">–:––</span>
       </button>
     </div>
     <p class="hint" id="hint" role="status"></p>
@@ -93,15 +117,40 @@
       <input id="start" type="hidden">
       <input id="end" type="hidden">
       <input id="title" class="input" autocomplete="off" placeholder="제목" aria-label="제목">
-      <button type="button" id="noteToggle" class="link">메모 추가</button>
+      <div class="pick">
+        <span class="pick-label">어느 서랍에 넣을까요?</span>
+        <div id="catChips" class="chips" role="group" aria-label="서랍 선택"></div>
+      </div>
+      <button type="button" id="noteToggle" class="textbtn left">+ 메모</button>
       <textarea id="note" class="input" rows="3" placeholder="메모" aria-label="메모" hidden></textarea>
-      <button type="button" id="deleteBtn" class="link danger" hidden>삭제</button>
+      <button type="button" id="deleteBtn" class="textbtn left danger" hidden>삭제</button>
       <div class="cta">
-        <button class="btn brand big" type="submit" id="saveBtn">저장</button>
+        <button class="btn primary big" type="submit" id="saveBtn">서랍에 넣기</button>
       </div>
     </form>
   </div>
 </div>
+
+<!-- 서랍 만들기/수정 시트 -->
+<div id="sheet" class="sheet" hidden>
+  <div class="sheet-dim" data-sheet-close></div>
+  <form id="sheetForm" class="sheet-panel" novalidate>
+    <h2 id="sheetTitle">새 서랍</h2>
+    <div class="sheet-preview" id="sheetPreview"><span id="sheetEmoji">💪</span></div>
+    <input id="catInput" class="input" maxlength="20" autocomplete="off" placeholder="서랍 이름 (예: 가슴, 팔, 어깨)" aria-label="서랍 이름">
+    <div id="emojiGrid" class="emoji-grid" role="group" aria-label="아이콘"></div>
+    <div id="colorRow" class="color-row" role="group" aria-label="색"></div>
+    <p class="hint" id="sheetHint" role="status"></p>
+    <div class="row">
+      <button type="button" class="btn" data-sheet-close>취소</button>
+      <button type="submit" class="btn primary" id="sheetSave">만들기</button>
+    </div>
+    <button type="button" id="catDelete" class="textbtn danger" hidden>이 서랍 삭제</button>
+  </form>
+</div>
+
+<div id="toast" class="toast" role="status" hidden></div>
+<canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
 
 <script src="core.js"></script>
 <script src="app.js"></script>

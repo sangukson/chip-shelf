@@ -43,3 +43,19 @@ test("normalizeClip", () => {
   assert.strictEqual(C.normalizeClip({ videoId: "<script>", start: 1, end: 2 }), null);
   assert.strictEqual(C.normalizeClip(null), null);
 });
+
+test("categories and backup", () => {
+  const cat = C.normalizeCategory({ id: "a", name: " 가슴 ", emoji: "💪", color: "mint" });
+  assert.deepStrictEqual([cat.name, cat.emoji, cat.color], ["가슴", "💪", "mint"]);
+  assert.strictEqual(C.normalizeCategory({ id: "a", name: "x", color: "nope" }).color, "tomato");
+  assert.strictEqual(C.normalizeCategory({ id: "a", name: "  " }), null);
+  const clip = { id: "c", videoId: "dQw4w9WgXcQ", start: 1, end: 5, categoryId: "a" };
+  assert.strictEqual(C.normalizeClip(clip).categoryId, "a");
+  assert.strictEqual(C.normalizeClip({ ...clip, categoryId: 3 }).categoryId, "");
+  // 예전 백업(배열)과 새 백업(객체) 모두 읽는다
+  assert.strictEqual(C.parseBackup(JSON.stringify([clip])).clips.length, 1);
+  const b = C.parseBackup(JSON.stringify({ v: 2, cats: [cat, { bad: 1 }], clips: [clip, { bad: 1 }] }));
+  assert.deepStrictEqual([b.cats.length, b.clips.length], [1, 1]);
+  assert.strictEqual(C.parseBackup("garbage"), null);
+  assert.strictEqual(C.parseBackup('{"x":1}'), null);
+});

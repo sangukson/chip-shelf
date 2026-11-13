@@ -1,10 +1,10 @@
 // 홈 화면 앱이 빨리 뜨고, 인터넷이 없어도 목록은 열리게 하는 서비스 워커.
 // 같은 출처 파일만 다룬다(유튜브 영상·썸네일은 손대지 않는다).
 // 온라인이면 늘 새 파일을 받아 쓰고(배포가 바로 반영됨), 실패할 때만 저장해 둔 사본을 쓴다.
-var CACHE = "clip-shelf-v1";
+var CACHE = "clip-shelf-v2";
 var SHELL = [
-  "./", "index.html", "app.css", "app.js", "core.js", "theme.js",
-  "vendor/seed-design/base.min.css", "manifest.webmanifest", "icon-180.png", "icon-192.png"
+  "./", "index.html", "app.css", "app.js", "core.js",
+  "manifest.webmanifest", "icon.svg", "icon-180.png", "icon-192.png"
 ];
 
 self.addEventListener("install", function (e) {
