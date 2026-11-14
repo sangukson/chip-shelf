@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta name="theme-color" content="#f2f4f6" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#101013" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=no">
@@ -23,17 +23,10 @@
 <div id="home" class="screen">
   <div class="body">
     <header class="top">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>클립 서랍</h1>
       <p class="stat" id="stat"></p>
+      <h1 class="headline">오늘은 뭘<br>다시 볼까요?</h1>
     </header>
 
-    <form id="openForm" class="paste" novalidate>
-      <input id="url" class="input" type="url" inputmode="url" autocomplete="off" placeholder="유튜브 링크 붙여넣기" aria-label="유튜브 링크" aria-describedby="openHint">
-      <button class="btn primary" type="submit">콕!</button>
-    </form>
-    <p class="hint" id="openHint" role="status"></p>
-
-    <h2 class="section">내 서랍</h2>
     <div id="cats" class="cats"></div>
     <div id="starter" class="starter" hidden>
       <p>이런 서랍으로 시작해 볼까요?</p>
@@ -62,6 +55,15 @@
   </div>
 </div>
 
+<!-- 홈 아래에 떠 있는 입력 바: 링크를 붙여넣거나 검색어를 적는다 -->
+<div class="dock" id="homeDock">
+  <p class="hint" id="openHint" role="status"></p>
+  <form id="openForm" class="dock-bar" novalidate>
+    <input id="url" type="text" inputmode="url" autocomplete="off" autocapitalize="off" placeholder="링크 붙여넣기 또는 유튜브 검색" aria-label="유튜브 링크 또는 검색어" aria-describedby="openHint">
+    <button class="dock-go" type="submit" aria-label="열기">＋</button>
+  </form>
+</div>
+
 <!-- 서랍 안: 그 분류의 클립들 -->
 <div id="catPage" class="screen" hidden>
   <header class="bar">
@@ -70,20 +72,23 @@
   </header>
   <div class="body">
     <div class="cat-hero" id="catHero">
-      <span class="cat-hero-emoji" id="catEmoji" aria-hidden="true"></span>
+      <span class="cat-hero-emoji" id="catEmoji" aria-hidden="true" hidden></span>
       <div>
         <h1 id="catName"></h1>
         <p id="catCount"></p>
       </div>
     </div>
-    <form id="catOpenForm" class="paste" novalidate>
-      <input id="catUrl" class="input" type="url" inputmode="url" autocomplete="off" placeholder="이 서랍에 넣을 유튜브 링크" aria-label="유튜브 링크" aria-describedby="catHint">
-      <button class="btn primary" type="submit">콕!</button>
-    </form>
-    <p class="hint" id="catHint" role="status"></p>
     <input id="q" class="input search" type="search" placeholder="검색" aria-label="클립 검색" hidden>
     <div id="list"></div>
   </div>
+</div>
+
+<div class="dock" id="catDock" hidden>
+  <p class="hint" id="catHint" role="status"></p>
+  <form id="catOpenForm" class="dock-bar" novalidate>
+    <input id="catUrl" type="text" inputmode="url" autocomplete="off" autocapitalize="off" placeholder="이 서랍에 넣을 링크 또는 검색" aria-label="유튜브 링크 또는 검색어" aria-describedby="catHint">
+    <button class="dock-go" type="submit" aria-label="열기">＋</button>
+  </form>
 </div>
 
 <!-- 재생·편집 -->

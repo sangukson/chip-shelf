@@ -81,11 +81,26 @@
   var CHEERS = ["콕! 서랍에 넣었어요", "나이스 콕!", "또 하나 모았다!", "딱 그 구간, 저장 완료"];
 
   // ---------- 홈: 서랍 목록 ----------
+  // 서랍 커버: 안에 든 클립 썸네일을 최대 3장 묶어 보여 준다. 비어 있으면 서랍 색과 아이콘.
+  function cover(list, emoji) {
+    var shots = list.slice(0, 3);
+    var box = el("span", { class: "cover", "data-n": String(shots.length) });
+    if (!shots.length) { box.appendChild(el("span", { class: "cover-emoji", text: emoji })); return box; }
+    shots.forEach(function (x) {
+      var cell = el("span", { class: "cover-cell" });
+      var img = el("img", { src: "https://i.ytimg.com/vi/" + x.videoId + "/mqdefault.jpg", alt: "", loading: "lazy" });
+      img.addEventListener("error", function () { img.remove(); });
+      cell.appendChild(img); box.appendChild(cell);
+    });
+    return box;
+  }
   function catCard(o) {
     var b = el("button", { class: "cat" + (o.cls ? " " + o.cls : ""), type: "button" }, [
-      el("span", { class: "cat-emoji", text: o.emoji }),
-      el("span", { class: "cat-name", text: o.name }),
-      o.count == null ? null : el("span", { class: "cat-count", text: "클립 " + o.count + "개" })
+      o.cls === "add" ? el("span", { class: "cover", "data-n": "0" }, [el("span", { class: "cover-emoji", text: "＋" })]) : cover(o.list, o.emoji),
+      el("span", { class: "cat-meta" }, [
+        el("span", { class: "cat-name", text: o.name }),
+        o.list ? el("span", { class: "cat-count", text: "클립 " + o.list.length + "개" }) : null
+      ])
     ]);
     if (o.color) b.style.setProperty("--c", colorVar(o.color));
     b.addEventListener("click", o.onClick);
@@ -93,16 +108,16 @@
   }
   function renderHome() {
     var total = clips.reduce(function (s, c) { return s + (c.end - c.start); }, 0);
-    $("stat").textContent = clips.length ? "클립 " + clips.length + "개 · " + C.fmtLen(total) + " 모았어요" : "";
+    $("stat").textContent = clips.length ? "클립 " + clips.length + "개 · " + C.fmtLen(total) : "클립 서랍";
     var box = $("cats"); box.textContent = "";
     cats.forEach(function (c, i) {
-      var card = catCard({ emoji: c.emoji, name: c.name, color: c.color, count: clipsIn(c.id).length, onClick: function () { go("cat-" + c.id); } });
+      var card = catCard({ emoji: c.emoji, name: c.name, color: c.color, list: clipsIn(c.id), onClick: function () { go("cat-" + c.id); } });
       card.style.animationDelay = (i * 40) + "ms";
       box.appendChild(card);
     });
-    var loose = clipsIn(NONE).length;
-    if (loose) box.appendChild(catCard({ emoji: "📦", name: "미분류", cls: "plain", count: loose, onClick: function () { go("cat-" + NONE); } }));
-    if (clips.length && cats.length) box.appendChild(catCard({ emoji: "🗂️", name: "전체", cls: "plain", count: clips.length, onClick: function () { go("cat-" + ALL); } }));
+    var loose = clipsIn(NONE);
+    if (loose.length) box.appendChild(catCard({ emoji: "📦", name: "미분류", cls: "plain", list: loose, onClick: function () { go("cat-" + NONE); } }));
+    if (clips.length && cats.length) box.appendChild(catCard({ emoji: "🗂️", name: "전체", cls: "plain", list: clips, onClick: function () { go("cat-" + ALL); } }));
     box.appendChild(catCard({ emoji: "＋", name: "새 서랍", cls: "add", onClick: function () { openSheet(null); } }));
 
     // 서랍이 하나도 없을 때: 한 번 눌러 만드는 추천
@@ -125,11 +140,10 @@
     var hero = $("catHero");
     hero.className = "cat-hero" + (c ? "" : " plain");
     hero.style.setProperty("--c", c ? colorVar(c.color) : "var(--card)");
-    $("catEmoji").textContent = c ? c.emoji : (curCat === ALL ? "🗂️" : "📦");
     $("catName").textContent = c ? c.name : (curCat === ALL ? "전체" : "미분류");
     $("catCount").textContent = "클립 " + mine.length + "개";
     $("catEdit").hidden = !c;
-    $("catUrl").placeholder = c ? "이 서랍에 넣을 유튜브 링크" : "유튜브 링크 붙여넣기";
+    $("catUrl").placeholder = c ? "이 서랍에 넣을 링크 또는 검색" : "링크 붙여넣기 또는 유튜브 검색";
 
     $("q").hidden = mine.length < SEARCH_FROM;
     var q = $("q").hidden ? "" : $("q").value.trim().toLowerCase();
@@ -372,6 +386,7 @@
     if (h !== "edit" && cur) { unmountPlayer(); cur = null; }
     var view = h === "edit" ? "editor" : h.indexOf("cat-") === 0 ? "catPage" : "home";
     ["home", "catPage", "editor"].forEach(function (id) { $(id).hidden = id !== view; });
+    $("homeDock").hidden = view !== "home"; $("catDock").hidden = view !== "catPage";
     if (view === "catPage") { curCat = h.slice(4); renderCat(); }
     else if (view === "home") { curCat = null; renderHome(); }
     window.scrollTo(0, 0);
@@ -392,9 +407,12 @@
     $(formId).addEventListener("submit", function (ev) {
       ev.preventDefault();
       var v = $(inputId).value;
-      if (!v.trim()) return setHint(hintId, "유튜브 링크를 붙여넣어 주세요.", true);
-      if (!openFromText(v, getCat())) return setHint(hintId, "유튜브 링크가 아닌 것 같아요. 예: https://youtu.be/영상ID", true);
-      $(inputId).value = ""; setHint(hintId, "");
+      if (!v.trim()) return setHint(hintId, "유튜브 링크를 붙여넣거나 검색어를 적어 주세요.", true);
+      if (openFromText(v, getCat())) { $(inputId).value = ""; return setHint(hintId, ""); }
+      // 링크처럼 생겼는데 유튜브가 아니면 알려 주고, 그 밖의 글자는 검색어로 보고 유튜브 검색을 연다.
+      if (/^https?:\/\/|^[\w-]+(\.[\w-]+)+(\/|$)/i.test(v.trim())) return setHint(hintId, "유튜브 링크가 아닌 것 같아요. 예: https://youtu.be/영상ID", true);
+      window.open("https://www.youtube.com/results?search_query=" + encodeURIComponent(v.trim()), "_blank", "noopener");
+      setHint(hintId, "유튜브에서 영상을 찾은 뒤 공유 → 링크 복사를 하고, 여기에 붙여넣어 주세요.");
     });
   }
   wireOpen("openForm", "url", "openHint", function () { return ""; });
